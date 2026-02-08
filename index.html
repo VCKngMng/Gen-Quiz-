@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GenExpert Pro | Mastery Engine</title>
+    <title>GenExpert Pro | Intelligence Archive</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -12,623 +12,497 @@
             --accent: #fbbf24;
             --accent-glow: rgba(251, 191, 36, 0.4);
             --bg-deep: #020617;
+            --success: #22c55e;
+            --error: #ef4444;
         }
 
         body { background-color: var(--bg-deep); color: #f8fafc; overflow-x: hidden; }
-        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
-        .glass-hover:hover { background: rgba(30, 41, 59, 0.9); border-color: var(--accent); }
-        .text-neon { text-shadow: 0 0 15px var(--accent-glow); }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); }
         
-        .progression-pill { transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        .active-pill { background: var(--accent); box-shadow: 0 0 20px var(--accent); transform: scale(1.2); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
 
-        .streak-badge {
-            animation: pulse-gold 2s infinite;
-        }
-
-        @keyframes pulse-gold {
-            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.4); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(251, 191, 36, 0); }
-            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0); }
-        }
-
-        @keyframes slideInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-in { animation: slideInUp 0.5s ease-out forwards; }
+        .archive-sidebar-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .archive-sidebar-item:hover { transform: translateX(8px); }
 
         .gen-checkbox:checked + label { 
             background: var(--accent); 
             color: #020617; 
             border-color: var(--accent);
-            transform: translateY(-2px);
             box-shadow: 0 4px 12px var(--accent-glow);
         }
 
-        .difficulty-indicator {
-            height: 4px;
-            transition: width 0.5s ease;
+        @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.98) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
         }
+        .animate-content { animation: fadeInScale 0.4s ease-out forwards; }
+
+        .review-card-ok { border-left: 4px solid var(--success); background: rgba(34, 197, 94, 0.05); }
+        .review-card-err { border-left: 4px solid var(--error); background: rgba(239, 68, 68, 0.05); }
     </style>
 </head>
 <body class="font-sans antialiased">
 
-    <!-- NAVIGATION -->
     <nav class="sticky top-0 z-50 border-b border-white/5 bg-slate-950/90 backdrop-blur-xl">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center">
             <div class="flex items-center gap-3 cursor-pointer group" onclick="app.switchTab('home')">
                 <div class="w-10 h-10 bg-amber-400 rounded-xl flex items-center justify-center text-slate-950 font-black text-xl shadow-lg shadow-amber-400/20">G</div>
-                <span class="text-2xl font-black tracking-tighter text-white">GEN<span class="text-amber-400">EXPERT</span> <span class="text-[10px] bg-white/10 px-2 py-0.5 rounded ml-1 text-slate-400 tracking-normal uppercase">Pro</span></span>
+                <span class="text-2xl font-black tracking-tighter text-white uppercase italic">Gen<span class="text-amber-400">Expert</span></span>
             </div>
-            <div class="flex gap-4">
-                <button onclick="app.switchTab('explore')" class="text-sm font-bold text-slate-400 hover:text-white transition-colors">Archive</button>
-                <button onclick="app.switchTab('quiz')" class="px-6 py-2 bg-white text-slate-950 rounded-xl text-sm font-black hover:bg-amber-400 transition-all hover:shadow-lg">Training</button>
+            <div class="flex gap-2">
+                <button onclick="app.switchTab('explore')" id="nav-explore" class="px-5 py-2 rounded-xl text-sm font-black transition-all">Archive</button>
+                <button onclick="app.switchTab('quiz')" id="nav-quiz" class="px-5 py-2 bg-amber-400 text-slate-950 rounded-xl text-sm font-black transition-all">Training</button>
             </div>
         </div>
     </nav>
 
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <!-- HOME VIEW -->
-        <section id="view-home" class="py-24 text-center animate-in">
-            <div class="mb-6 inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/20 text-amber-400 text-[10px] font-black uppercase tracking-[0.2em]">
-                <span class="relative flex h-2 w-2"><span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span><span class="relative inline-flex rounded-full h-2 w-2 bg-amber-400"></span></span>
-                System v2.5 Online
-            </div>
-            <h1 class="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9]">Unlock Your <br><span class="text-amber-400 text-neon">Generational Knowledge.</span></h1>
-            <p class="text-slate-400 text-xl max-w-2xl mx-auto mb-12 leading-relaxed">
-                Adaptive psychographic assessment engine. Track your mastery across the 1883-2025 timeline with real-time performance analytics.
-            </p>
-            <div class="flex flex-col sm:flex-row gap-4 justify-center">
-                <button onclick="app.switchTab('explore')" class="px-10 py-5 glass glass-hover rounded-2xl font-bold text-lg transition-all">Historical Library</button>
-                <button onclick="app.switchTab('quiz')" class="px-10 py-5 bg-amber-400 text-slate-950 rounded-2xl font-black text-lg shadow-2xl shadow-amber-400/30 hover:scale-105 transition-all">Launch Training</button>
+        <section id="view-home" class="py-20 text-center animate-content">
+            <h1 class="text-6xl md:text-8xl font-black mb-8 tracking-tighter leading-[0.9]">Master the <br><span class="text-amber-400">Generational Code.</span></h1>
+            <p class="text-slate-400 text-xl max-w-2xl mx-auto mb-12">An interactive vault exploring the sociological shifts of the last 150 years.</p>
+            <div class="flex flex-wrap gap-4 justify-center">
+                <button onclick="app.switchTab('explore')" class="px-10 py-5 glass hover:border-amber-400 rounded-2xl font-black text-lg transition-all">Enter Archive</button>
+                <button onclick="app.switchTab('quiz')" class="px-10 py-5 bg-white text-slate-950 rounded-2xl font-black text-lg hover:bg-amber-400 transition-all">Start Training</button>
             </div>
         </section>
 
-        <!-- EXPLORE VIEW -->
-        <section id="view-explore" class="hidden animate-in space-y-8">
-            <div class="grid grid-cols-1 lg:grid-cols-4 gap-8">
-                <div class="lg:col-span-3 space-y-8">
-                    <div class="glass p-8 rounded-[2.5rem] border-white/5">
-                        <h3 class="text-xl font-bold mb-6 flex items-center gap-3">
-                            <span class="w-1.5 h-6 bg-amber-400 rounded-full"></span> Timeline Matrix
-                        </h3>
-                        <div class="h-80">
-                            <canvas id="timelineChart"></canvas>
+        <!-- ARCHIVE VIEW -->
+        <section id="view-explore" class="hidden animate-content">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-3 space-y-4">
+                    <div class="glass p-6 rounded-[2rem] border-white/5">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-black uppercase text-slate-500">Archive Progress</span>
+                            <span id="discovery-percent" class="text-xs font-black text-amber-400">0%</span>
+                        </div>
+                        <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                            <div id="discovery-bar" class="h-full bg-amber-400 transition-all duration-700 w-0"></div>
                         </div>
                     </div>
-                    <div id="gen-detail" class="glass p-10 rounded-[2.5rem] min-h-[450px] border-white/5 relative overflow-hidden">
-                        <!-- Detail JS -->
-                    </div>
+                    <div class="space-y-2 max-h-[60vh] overflow-y-auto hide-scroll pr-2" id="archive-sidebar"></div>
                 </div>
-                <div class="space-y-3 max-h-[850px] overflow-y-auto pr-2 hide-scroll" id="gen-list">
-                    <!-- List JS -->
+
+                <div class="lg:col-span-9 space-y-6">
+                    <div class="glass p-6 rounded-[2.5rem] border-white/5 relative overflow-hidden h-32">
+                        <canvas id="timelineChart"></canvas>
+                    </div>
+                    <div id="archive-detail-container" class="space-y-6"></div>
                 </div>
             </div>
         </section>
 
         <!-- QUIZ VIEW -->
-        <section id="view-quiz" class="hidden animate-in">
+        <section id="view-quiz" class="hidden animate-content">
             <div class="max-w-4xl mx-auto">
-                
-                <!-- SETUP -->
                 <div id="quiz-setup" class="glass p-12 rounded-[3rem] border-white/5">
                     <div class="text-center mb-10">
-                        <h2 class="text-4xl font-black mb-3">Initialize Assessment</h2>
-                        <p class="text-slate-500">Choose focus areas for your 15-question deep dive.</p>
+                        <h2 class="text-4xl font-black mb-3 italic uppercase tracking-tighter text-white">Assessment Config</h2>
+                        <p class="text-slate-500">Toggle generations to build your custom training pool.</p>
                     </div>
-                    
-                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12" id="focus-options">
-                        <!-- JS Focus -->
-                    </div>
-
-                    <div class="bg-white/5 rounded-2xl p-6 mb-10 flex flex-wrap gap-8 justify-center items-center">
-                        <div class="text-center">
-                            <span class="block text-[10px] text-slate-500 font-black uppercase mb-1">Duration</span>
-                            <span class="text-xl font-bold">15 Rounds</span>
-                        </div>
-                        <div class="w-px h-10 bg-white/10"></div>
-                        <div class="text-center">
-                            <span class="block text-[10px] text-slate-500 font-black uppercase mb-1">Scoring</span>
-                            <span class="text-xl font-bold">Scaling Multiplier</span>
-                        </div>
-                        <div class="w-px h-10 bg-white/10"></div>
-                        <div class="text-center">
-                            <span class="block text-[10px] text-slate-500 font-black uppercase mb-1">Mode</span>
-                            <span class="text-xl font-bold">Focused Study</span>
-                        </div>
-                    </div>
-
-                    <div class="flex flex-col items-center">
-                        <button onclick="app.startQuiz()" class="group relative bg-amber-400 text-slate-950 px-16 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl shadow-amber-400/20">
-                            Begin 15-Question Mission
-                        </button>
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-12" id="focus-options"></div>
+                    <div class="flex justify-center">
+                        <button onclick="app.startQuiz()" class="bg-amber-400 text-slate-950 px-16 py-5 rounded-2xl font-black text-xl hover:scale-105 transition-all shadow-xl shadow-amber-400/20">Initialize Sequence</button>
                     </div>
                 </div>
 
-                <!-- HUD -->
-                <div id="quiz-hud" class="hidden space-y-4 mb-6">
-                    <div class="grid grid-cols-3 gap-4">
-                        <div class="glass p-5 rounded-3xl flex flex-col items-center border-white/5">
-                            <span class="text-[10px] uppercase text-slate-500 font-black tracking-widest mb-1">Level</span>
-                            <div class="flex gap-1.5" id="difficulty-pills">
-                                <div class="w-3 h-3 rounded-full bg-slate-800 progression-pill" id="pill-0"></div>
-                                <div class="w-3 h-3 rounded-full bg-slate-800 progression-pill" id="pill-1"></div>
-                                <div class="w-3 h-3 rounded-full bg-slate-800 progression-pill" id="pill-2"></div>
-                                <div class="w-3 h-3 rounded-full bg-slate-800 progression-pill" id="pill-3"></div>
-                            </div>
-                        </div>
-                        <div class="glass p-5 rounded-3xl flex flex-col items-center border-white/5 relative overflow-hidden">
-                            <span class="text-[10px] uppercase text-slate-500 font-black tracking-widest mb-1">Credits</span>
-                            <span class="text-2xl font-black text-amber-400 text-neon" id="current-score">0</span>
-                            <div id="streak-counter" class="hidden absolute top-2 right-4 px-2 py-0.5 rounded bg-amber-400 text-slate-950 text-[10px] font-black">STREAK x2</div>
-                        </div>
-                        <div class="glass p-5 rounded-3xl flex flex-col items-center border-white/5">
-                            <span class="text-[10px] uppercase text-slate-500 font-black tracking-widest mb-1">Progress</span>
-                            <span class="text-xl font-bold" id="q-status">1 / 15</span>
-                        </div>
+                <div id="quiz-hud" class="hidden grid grid-cols-3 gap-4 mb-6">
+                    <div class="glass p-5 rounded-3xl text-center border-white/5">
+                        <span class="text-[10px] uppercase text-slate-500 font-black block mb-1">Score</span>
+                        <span id="current-score" class="text-2xl font-black text-amber-400">0</span>
                     </div>
-                    <div class="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                        <div id="progress-bar-inner" class="h-full bg-amber-400 transition-all duration-500" style="width: 0%"></div>
+                    <div class="glass p-5 rounded-3xl text-center border-white/5">
+                        <span class="text-[10px] uppercase text-slate-500 font-black block mb-1">Difficulty</span>
+                        <div class="flex justify-center gap-1.5" id="difficulty-pills"></div>
+                    </div>
+                    <div class="glass p-5 rounded-3xl text-center border-white/5">
+                        <span class="text-[10px] uppercase text-slate-500 font-black block mb-1">Progress</span>
+                        <span id="q-status" class="text-2xl font-bold italic">1/15</span>
                     </div>
                 </div>
 
-                <!-- PLAY -->
                 <div id="quiz-play" class="hidden space-y-6">
-                    <div class="glass p-12 rounded-[3.5rem] border-white/10 shadow-2xl">
-                        <div id="difficulty-badge" class="mb-6 inline-block px-3 py-1 rounded-lg bg-white/5 text-[10px] font-bold text-slate-400 uppercase tracking-widest">General Knowledge</div>
-                        <h2 id="q-text" class="text-3xl md:text-4xl font-black leading-tight mb-12">Generating context...</h2>
-                        <div id="q-options" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- Options -->
-                        </div>
+                    <div class="glass p-10 rounded-[3.5rem] border-white/10">
+                        <span id="difficulty-badge" class="mb-4 text-[10px] font-bold text-slate-500 uppercase tracking-widest block">Level: Basic</span>
+                        <h2 id="q-text" class="text-3xl md:text-4xl font-black leading-tight mb-12">...</h2>
+                        <div id="q-options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                     </div>
-
-                    <div id="q-feedback" class="hidden glass p-10 rounded-[2.5rem] animate-in">
-                        <div class="flex flex-col md:flex-row gap-8 items-center md:items-start">
-                            <div id="fb-icon" class="text-6xl p-4 bg-white/5 rounded-3xl"></div>
+                    <div id="q-feedback" class="hidden glass p-10 rounded-[2.5rem] animate-content">
+                        <div class="flex gap-8 items-start">
+                            <div id="fb-icon" class="text-5xl"></div>
                             <div class="flex-1">
-                                <h4 id="fb-title" class="text-2xl font-black mb-3 uppercase tracking-tight"></h4>
-                                <p id="fb-desc" class="text-slate-400 text-lg mb-8 leading-relaxed"></p>
-                                <button onclick="app.nextQuestion()" class="bg-amber-400 text-slate-950 px-12 py-4 rounded-2xl font-black text-lg hover:bg-white transition-all">Advance Sequence</button>
+                                <h4 id="fb-title" class="text-xl font-black mb-2 uppercase"></h4>
+                                <p id="fb-desc" class="text-slate-400 mb-8 leading-relaxed"></p>
+                                <button onclick="app.nextQuestion()" class="bg-amber-400 text-slate-950 px-10 py-3 rounded-xl font-black hover:bg-white transition-all">Continue</button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- DASHBOARD -->
-                <div id="quiz-dashboard" class="hidden space-y-8 animate-in">
+                <div id="quiz-dashboard" class="hidden space-y-8 animate-content">
                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div class="lg:col-span-1 glass p-10 rounded-[3rem] border-amber-400/20 shadow-xl shadow-amber-400/5">
-                            <h3 class="text-2xl font-black mb-8">System Report</h3>
-                            <div class="space-y-8">
-                                <div>
-                                    <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2">Total Points</p>
-                                    <p class="text-7xl font-black text-amber-400 text-neon leading-none" id="dash-score">0</p>
-                                </div>
-                                <div class="grid grid-cols-2 gap-4 pt-6 border-t border-white/5">
-                                    <div>
-                                        <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Accuracy</p>
-                                        <p class="text-2xl font-bold" id="dash-accuracy">0%</p>
-                                    </div>
-                                    <div>
-                                        <p class="text-slate-500 text-[10px] font-black uppercase mb-1">Max Streak</p>
-                                        <p class="text-2xl font-bold text-amber-400" id="dash-streak">0</p>
-                                    </div>
-                                </div>
+                        <div class="lg:col-span-1 glass p-10 rounded-[3rem] border-amber-400/20 text-center">
+                            <h3 class="text-xs font-black mb-8 uppercase text-slate-500">Assessment Results</h3>
+                            <p class="text-7xl font-black text-amber-400 mb-6" id="dash-score">0</p>
+                            <div class="grid grid-cols-2 gap-4 mb-10 pt-6 border-t border-white/5">
+                                <div><p class="text-[10px] text-slate-500 font-black mb-1 uppercase">Accuracy</p><p id="dash-accuracy" class="text-2xl font-bold">0%</p></div>
+                                <div><p class="text-[10px] text-slate-500 font-black mb-1 uppercase">Streak</p><p id="dash-streak" class="text-2xl font-bold">0</p></div>
                             </div>
-                            <button onclick="app.switchTab('quiz')" class="mt-12 w-full py-5 bg-white text-slate-950 rounded-2xl font-black text-lg hover:bg-amber-400 transition-all">Recalibrate Parameters</button>
+                            <div class="space-y-3">
+                                <button onclick="app.switchTab('quiz')" class="w-full py-4 bg-amber-400 text-slate-950 rounded-2xl font-black">New Training</button>
+                                <button onclick="app.switchTab('explore')" class="w-full py-4 glass text-white rounded-2xl font-black">Archive</button>
+                            </div>
                         </div>
-                        <div class="lg:col-span-2 glass p-10 rounded-[3rem] border-white/5 flex flex-col">
-                            <h3 class="text-xl font-bold mb-8 flex items-center gap-3">
-                                <span class="w-1.5 h-6 bg-indigo-500 rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]"></span> Mastery Distribution
-                            </h3>
-                            <div class="flex-1 min-h-[300px]">
-                                <canvas id="masteryChart"></canvas>
-                            </div>
+                        <div class="lg:col-span-2 glass p-10 rounded-[3rem] border-white/5 h-[450px]">
+                            <h3 class="text-xs font-black uppercase text-slate-500 mb-6">Subject Mastery</h3>
+                            <canvas id="masteryChart"></canvas>
                         </div>
                     </div>
-
-                    <div class="glass p-10 rounded-[3rem] border-white/5">
-                        <div class="flex justify-between items-center mb-10">
-                            <h3 class="text-2xl font-black">Historical Debriefing</h3>
-                            <div class="flex gap-2">
-                                <span class="px-3 py-1 bg-green-500/10 text-green-500 rounded text-[10px] font-bold uppercase">Passed</span>
-                                <span class="px-3 py-1 bg-red-500/10 text-red-500 rounded text-[10px] font-bold uppercase">Corrected</span>
-                            </div>
-                        </div>
-                        <div id="review-list" class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <!-- Review List -->
-                        </div>
+                    <div class="space-y-4">
+                        <h3 class="text-sm font-black uppercase tracking-widest text-slate-500 ml-4">Detailed Sequence Review</h3>
+                        <div id="review-list" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
                     </div>
                 </div>
-
             </div>
         </section>
     </main>
 
     <script>
-        // --- EXPANDED DATASET (45+ Questions for zero repetition) ---
         const gens = [
-            { id: 'lost', name: 'Lost Gen', start: 1883, end: 1900, icon: '🎩', color: '#f59e0b' },
-            { id: 'greatest', name: 'Greatest Gen', start: 1901, end: 1927, icon: '🎖️', color: '#10b981' },
-            { id: 'silent', name: 'Silent Gen', start: 1928, end: 1945, icon: '📻', color: '#6366f1' },
-            { id: 'boomers', name: 'Baby Boomers', start: 1946, end: 1964, icon: '☮️', color: '#ec4899' },
-            { id: 'genx', name: 'Gen X', start: 1965, end: 1980, icon: '📼', color: '#f43f5e' },
-            { id: 'millennials', name: 'Millennials', start: 1981, end: 1996, icon: '💾', color: '#8b5cf6' },
-            { id: 'genz', name: 'Gen Z', start: 1997, end: 2012, icon: '📱', color: '#06b6d4' },
-            { id: 'alpha', name: 'Gen Alpha', start: 2013, end: 2025, icon: '🤖', color: '#14b8a6' }
+            { 
+                id: 'lost', name: 'Lost Generation', start: 1883, end: 1900, icon: '🎩', color: '#f59e0b', 
+                vibe: 'Disillusioned Resilience', 
+                summary: 'Born during the shift from Victorian to Industrial, they were marked by the wreckage of WWI.',
+                traits: ['Stoic', 'Skeptical', 'Globalist'], 
+                impact: 'Modernist literature, Dadaism, and the expatriate cultural identity.',
+                economy: 'Transition to Industrial mass production; gold standard.',
+                icons: 'Ernest Hemingway, F. Scott Fitzgerald, Gertrude Stein',
+                archetype: 'Nomad' 
+            },
+            { 
+                id: 'greatest', name: 'Greatest Generation', start: 1901, end: 1927, icon: '🎖️', color: '#10b981', 
+                vibe: 'Civic Sacrifice', 
+                summary: 'The GI generation that navigated the Great Depression and fought World War II.',
+                traits: ['Dutiful', 'Disciplined', 'Civic-minded'], 
+                impact: 'Established the post-WWII global institutions and the modern middle class.',
+                economy: 'Depression era followed by massive post-war industrial expansion.',
+                icons: 'John F. Kennedy, Rosa Parks, James Stewart',
+                archetype: 'Hero' 
+            },
+            { 
+                id: 'silent', name: 'Silent Generation', start: 1928, end: 1945, icon: '📻', color: '#6366f1', 
+                vibe: 'Adaptive Conformity', 
+                summary: 'Born into hardship, they became the bridge to the post-war boom, often working within systems.',
+                traits: ['Cautious', 'Prudent', 'Collaborative'], 
+                impact: 'The Civil Rights Movement and the "Corporate Man" management style.',
+                economy: 'War-time recovery and the start of the "Golden Age" of Capitalism.',
+                icons: 'Martin Luther King Jr., Bob Dylan, Gloria Steinem',
+                archetype: 'Artist' 
+            },
+            { 
+                id: 'boomers', name: 'Baby Boomers', start: 1946, end: 1964, icon: '☮️', color: '#ec4899', 
+                vibe: 'Idealistic Expansion', 
+                summary: 'The post-war birth explosion. They transformed culture through rights movements and consumption.',
+                traits: ['Ambitious', 'Individualistic', 'Competitive'], 
+                impact: 'Redefined personal identity, popularized counter-culture, and dominated wealth for decades.',
+                economy: 'The rise of the consumer economy and globalization.',
+                icons: 'Steve Jobs, Oprah Winfrey, Bill Clinton',
+                archetype: 'Prophet' 
+            },
+            { 
+                id: 'genx', name: 'Gen X', start: 1965, end: 1980, icon: '📼', color: '#f43f5e', 
+                vibe: 'Cynical Independence', 
+                summary: 'The Latchkey Kids. Pragmatic, self-reliant, and skeptical of institutional authority.',
+                traits: ['Pragmatic', 'Entrepreneurial', 'Resourceful'], 
+                impact: 'Fueled the dot-com revolution and pushed for work-life balance.',
+                economy: 'Stagflation followed by the 80s boom and the birth of Silicon Valley.',
+                icons: 'Kurt Cobain, Elon Musk, Jennifer Aniston',
+                archetype: 'Nomad' 
+            },
+            { 
+                id: 'millennials', name: 'Millennials', start: 1981, end: 1996, icon: '💾', color: '#8b5cf6', 
+                vibe: 'Digital Connectivity', 
+                summary: 'The first to grow up with the internet. Purpose-driven and collaborative.',
+                traits: ['Tech-savvy', 'Optimistic', 'Purpose-oriented'], 
+                impact: 'The sharing economy (Uber/Airbnb) and the shift to remote work.',
+                economy: 'The Great Recession and the rise of the gig economy.',
+                icons: 'Mark Zuckerberg, Taylor Swift, Malala Yousafzai',
+                archetype: 'Hero' 
+            },
+            { 
+                id: 'genz', name: 'Gen Z', start: 1997, end: 2012, icon: '📱', color: '#06b6d4', 
+                vibe: 'Fluid Authenticity', 
+                summary: 'Digital natives. Hyper-connected, socially conscious, and pragmatic about the future.',
+                traits: ['Diverse', 'Inclusive', 'Radically honest'], 
+                impact: 'Creator economy, mental health awareness, and climate activism.',
+                economy: 'Subscription-based models and the influence of social-commerce.',
+                icons: 'Greta Thunberg, Zendaya, MrBeast',
+                archetype: 'Artist' 
+            },
+            { 
+                id: 'alpha', name: 'Gen Alpha', start: 2013, end: 2025, icon: '🤖', color: '#14b8a6', 
+                vibe: 'Immersive Integration', 
+                summary: 'Entirely born in the 21st century. AI and tablets are their baseline reality.',
+                traits: ['Adaptive', 'AI-native', 'Globally connected'], 
+                impact: 'Expected to be the most educated and tech-integrated generation ever.',
+                economy: 'Transitioning to AI-driven economies and decentralized finance.',
+                icons: 'N/A (Current Youth)',
+                archetype: 'Prophet' 
+            }
         ];
 
         const questions = [
-            // LEVEL 0 (100 pts)
-            { q: "Which gen is famously nicknamed 'The Latchkey Kids'?", options: ["Boomers", "Gen X", "Millennials", "Gen Z"], correct: 1, diff: 0, gen: 'genx', exp: "Gen X grew up with high rates of dual-income households, often coming home to empty houses." },
-            { q: "What defines the start of the Baby Boomer generation?", options: ["The Cold War", "WWII birth spike", "The Internet", "TV's invention"], correct: 1, diff: 0, gen: 'boomers', exp: "The 'Boom' refers to the explosion of births following WWII." },
-            { q: "Gen Z is often categorized as the first 'Mobile-First' generation. True?", options: ["True", "False"], correct: 0, diff: 0, gen: 'genz', exp: "Gen Z grew up with smartphones as their primary device for social interaction." },
-            { q: "Which group served as the bulk of the workforce during the Great Depression?", options: ["Lost", "Greatest", "Silent", "Boomers"], correct: 1, diff: 0, gen: 'greatest', exp: "The Greatest Generation built their resilience through the hardships of the 1930s." },
-            { q: "Gen Alpha children are primarily the kids of which generation?", options: ["Gen X", "Millennials", "Gen Z", "Silent"], correct: 1, diff: 0, gen: 'alpha', exp: "Gen Alpha (2013+) are largely the offspring of Millennials." },
-            { q: "The 'Silent Generation' was born between which major global conflicts?", options: ["Civil & WWI", "WWI & WWII", "WWII & Vietnam", "Vietnam & Gulf"], correct: 1, diff: 0, gen: 'silent', exp: "They were born 1928-1945, missing the combat of both world wars." },
-            { q: "Which gen is associated with the 'Disillusionment' after World War I?", options: ["Greatest", "Silent", "Lost", "Boomers"], correct: 2, diff: 0, gen: 'lost', exp: "The 'Lost' moniker describes the trauma and cultural aimlessness post-1918." },
-            { q: "Which generation is currently the largest living adult cohort in the US?", options: ["Boomers", "Gen X", "Millennials", "Gen Z"], correct: 2, diff: 0, gen: 'millennials', exp: "Millennials overtook Boomers as the largest living adult generation in 2019." },
-
-            // LEVEL 1 (150 pts)
-            { q: "Which year marks the transition from Millennial to Gen Z (Pew standard)?", options: ["1994", "1996", "1998", "2000"], correct: 1, diff: 1, gen: 'millennials', exp: "1996 is the standard cutoff separating those who remember 9/11 from those who don't." },
-            { q: "Who coined the phrase 'The Greatest Generation' in 1998?", options: ["Tom Brokaw", "Cronkite", "Bill Clinton", "Spielberg"], correct: 0, diff: 1, gen: 'greatest', exp: "Journalist Tom Brokaw wrote the best-selling book of that name." },
-            { q: "Which movement is most culturally linked to the Boomer youth of 1969?", options: ["Grunge", "Disco", "Woodstock/Hippie", "Punk"], correct: 2, diff: 1, gen: 'boomers', exp: "Woodstock was the defining cultural peak for Boomer idealists." },
-            { q: "Gen X is often credited with starting which tech revolution?", options: ["The iPhone", "The Personal Computer", "Radio", "Cable News"], correct: 1, diff: 1, gen: 'genx', exp: "Gen X icons like Steve Jobs and Bill Gates drove the personal computing boom." },
-            { q: "The 'Beat Generation' writers mostly belonged to which birth cohort?", options: ["Greatest", "Silent", "Boomers", "Lost"], correct: 1, diff: 1, gen: 'silent', exp: "Kerouac, Ginsberg, and Burroughs were mostly Silent Generation members." },
-            { q: "Which gen is statistically the most racially diverse in history?", options: ["Millennials", "Gen Z", "Gen X", "Alpha"], correct: 1, diff: 1, gen: 'genz', exp: "Gen Z's diversity metrics far exceed previous generations." },
-            { q: "What is the primary tech interface defining Gen Alpha's infancy?", options: ["Keyboard", "Touchscreen", "Voice UI / AI", "Remote Control"], correct: 2, diff: 1, gen: 'alpha', exp: "Voice assistants and AI are native to Gen Alpha from birth." },
-            { q: "The term 'Generation X' was popularized by which 1991 novel?", options: ["American Psycho", "Generation X", "Fight Club", "Microserfs"], correct: 1, diff: 1, gen: 'genx', exp: "Douglas Coupland's novel 'Generation X' gave the group its name." },
-
-            // LEVEL 2 (200 pts)
-            { q: "In the 1970s, Baby Boomers were criticized as being the '___ Generation'.", options: ["Lost", "Me", "Greedy", "Silent"], correct: 1, diff: 2, gen: 'boomers', exp: "The 'Me' Generation reflected a focus on self-actualization over community." },
-            { q: "Which generation saw the largest increase in higher education degrees?", options: ["Boomers", "Gen X", "Millennials", "Silent"], correct: 2, diff: 2, gen: 'millennials', exp: "Millennials became the most educated cohort in Western history up to that point." },
-            { q: "Which cohort is often called the 'Sandwich Generation' today?", options: ["Boomers", "Gen X", "Gen Z", "Silent"], correct: 1, diff: 2, gen: 'genx', exp: "Many Gen Xers are simultaneously raising children and caring for aging Boomer parents." },
-            { q: "What event in 1929 fundamentally shaped the childhood of the Silent Gen?", options: ["WWII", "Dust Bowl", "Stock Market Crash", "Prohibition"], correct: 2, diff: 2, gen: 'silent', exp: "The Great Depression formed the financial caution common in the Silent Generation." },
-            { q: "Who were the 'G.I. Generation' before being renamed 'Greatest'?", options: ["Civil War vets", "WWI soldiers", "WWII soldiers", "Vietnam vets"], correct: 2, diff: 2, gen: 'greatest', exp: "They were called the G.I. (Government Issue) Generation for decades." },
-            { q: "The 'MTV Generation' is a classic synonym for which group?", options: ["Early Boomers", "Late Gen X", "Millennials", "Gen Z"], correct: 1, diff: 2, gen: 'genx', exp: "Gen X's youth was defined by the launch and peak of MTV in the 80s." },
-            { q: "Which gen holds the highest percentage of global 'Wealth-to-Population' ratio?", options: ["Millennials", "Silent", "Boomers", "Gen Z"], correct: 2, diff: 2, gen: 'boomers', exp: "Baby Boomers control over 50% of US household wealth currently." },
-            { q: "Which generation is expected to reach 2 billion members by 2025?", options: ["Gen Z", "Millennials", "Gen Alpha", "Boomers"], correct: 2, diff: 2, gen: 'alpha', exp: "Alpha is on track to be the largest generation in global history." },
-
-            // LEVEL 3 (300 pts)
-            { q: "Who first said 'You are all a lost generation' to Ernest Hemingway?", options: ["James Joyce", "Gertrude Stein", "Scott Fitzgerald", "Sylvia Beach"], correct: 1, diff: 3, gen: 'lost', exp: "Gertrude Stein famously said this in Paris during the 1920s." },
-            { q: "Which sociologist first proposed the 'Strauss-Howe' generational theory?", options: ["Karl Marx", "William Strauss", "Max Weber", "Malcolm Gladwell"], correct: 1, diff: 3, gen: 'silent', exp: "William Strauss and Neil Howe developed the 'Four Turnings' theory." },
-            { q: "Which year is considered the definitive 'Pulse Year' for Gen X?", options: ["1965", "1970", "1973", "1976"], correct: 2, diff: 3, gen: 'genx', exp: "1973 is often cited as the 'core' birth year for the generation's psychographics." },
-            { q: "The 'Silent Generation' is the only cohort in 100 years not to produce a...?", options: ["President (US)", "Billionaire", "Nobel Prize", "Astronaut"], correct: 0, diff: 3, gen: 'silent', exp: "No US President (so far) has come from the Silent Generation (Biden/Trump are Boomer/Silent cusp)." },
-            { q: "Which exact event is used to define the 'Echo Boomer' moniker?", options: ["Birth rates 1980-95", "The 1964 peak", "The dot-com crash", "Vietnam exit"], correct: 0, diff: 3, gen: 'millennials', exp: "They are the 'echo' of their parents' massive birth wave." },
-            { q: "Gen Z is the first generation to have a majority favor which social shift?", options: ["Remote Work", "Home Ownership", "Gig Economy", "Gender Fluidity"], correct: 3, diff: 3, gen: 'genz', exp: "Gen Z marks a massive shift in cultural views on gender and identity." },
-            { q: "The 'Alpha' name was chosen by researcher Mark McCrindle after which event?", options: ["The 2008 Crash", "Launch of iPad (2010)", "COVID-19", "Facebook launch"], correct: 1, diff: 3, gen: 'alpha', exp: "The 2010 iPad launch is often seen as the technological starting line for Alpha." },
-            { q: "Which cohort is most associated with the 'Disruptive Innovation' era?", options: ["Boomers", "Gen X", "Millennials", "Gen Z"], correct: 2, diff: 3, gen: 'millennials', exp: "Millennials matured alongside the rise of Uber, Airbnb, and the gig economy." }
+            { q: "Which group is famously called 'The Latchkey Kids'?", options: ["Boomers", "Gen X", "Millennials", "Gen Z"], correct: 1, diff: 0, gen: 'genx', exp: "High rates of dual-income parents meant many Gen Xers came home to empty houses." },
+            { q: "The 'GI Generation' refers to which cohort?", options: ["Lost", "Greatest", "Silent", "Boomers"], correct: 1, diff: 0, gen: 'greatest', exp: "Named for the millions of 'GIs' who fought in WWII." },
+            { q: "Standard transition year between Millennial and Gen Z?", options: ["1994", "1996", "1998", "2000"], correct: 1, diff: 1, gen: 'millennials', exp: "1996 is the widely accepted sociological cutoff." },
+            { q: "Which gen is currently the most diverse in US history?", options: ["Millennials", "Gen Z", "Gen X", "Alpha"], correct: 1, diff: 2, gen: 'genz', exp: "Gen Z's metrics for racial and ethnic diversity are the highest recorded." },
+            { q: "Who popularized the name 'Generation X' via a 1991 novel?", options: ["Hemingway", "Douglas Coupland", "Chuck Palahniuk", "Bret Easton Ellis"], correct: 1, diff: 2, gen: 'genx', exp: "Coupland's 'Generation X: Tales for an Accelerated Culture' defined the name." },
+            { q: "Which generation is characterized by the 'Artist' archetype?", options: ["Silent", "Boomers", "Gen X", "Millennials"], correct: 0, diff: 3, gen: 'silent', exp: "Under Strauss-Howe theory, the Silent Generation fits the Artist (receptive) archetype." },
+            { q: "Whose phrase 'You are all a lost generation' gave the cohort its name?", options: ["Gertrude Stein", "Ernest Hemingway", "Sylvia Plath", "James Joyce"], correct: 0, diff: 2, gen: 'lost', exp: "Gertrude Stein said this to Hemingway, who then used it in 'The Sun Also Rises'." },
+            { q: "Which group dominates the 'sharing economy' disruption?", options: ["Gen X", "Millennials", "Gen Z", "Boomers"], correct: 1, diff: 1, gen: 'millennials', exp: "Millennials were the primary early adopters and creators of platforms like Uber and Airbnb." },
+            { q: "The 'Echo Boomer' moniker describes which generation?", options: ["Gen X", "Millennials", "Gen Z", "Alpha"], correct: 1, diff: 1, gen: 'millennials', exp: "They are the 'echo' of their Baby Boomer parents." },
+            { q: "Which group came of age during the 2008 Financial Crisis?", options: ["Gen X", "Millennials", "Gen Z", "Boomers"], correct: 1, diff: 0, gen: 'millennials', exp: "This crisis deeply shaped Millennial career paths and financial views." },
+            { q: "Which group is defined by coming of age in the 1960s?", options: ["Silent", "Boomers", "Gen X", "Greatest"], correct: 1, diff: 0, gen: 'boomers', exp: "Boomers are synonymous with the cultural shifts of the 1960s." },
+            { q: "Gen Alpha are primarily the children of...?", options: ["Gen X", "Millennials", "Gen Z", "Silent"], correct: 1, diff: 1, gen: 'alpha', exp: "Millennials are the primary parents of the Alpha cohort." },
+            { q: "Which group produced no US Presidents until Biden?", options: ["Lost", "Greatest", "Silent", "Boomers"], correct: 2, diff: 3, gen: 'silent', exp: "The Silent Generation was historically 'skipped' for the presidency until Joe Biden (born 1942)." },
+            { q: "Which generation is first born into a world of Generative AI?", options: ["Gen Z", "Alpha", "Beta", "Millennials"], correct: 1, diff: 1, gen: 'alpha', exp: "Alpha's infancy coincides with the global explosion of Large Language Models." },
+            { q: "Which generation pioneered 'Work-Life Balance' as a corporate concept?", options: ["Boomers", "Gen X", "Millennials", "Gen Z"], correct: 1, diff: 2, gen: 'genx', exp: "Gen X pushed back against the 'workaholic' Boomer culture." }
         ];
 
         const app = {
             state: {
-                tab: 'home',
-                quiz: {
-                    active: false, score: 0, history: [],
-                    currentDiff: 0, qIdx: 0, total: 15,
-                    usedIds: [], mastery: {}, focus: [],
-                    streak: 0, maxStreak: 0
-                },
-                charts: { timeline: null, mastery: null }
+                viewed: new Set(),
+                quiz: { active: false, score: 0, history: [], qIdx: 0, total: 15, used: [], streak: 0, maxStreak: 0, diff: 0, focus: [] }
             },
 
             init() {
-                this.renderGenList();
+                this.renderArchiveSidebar();
                 this.renderFocusOptions();
                 this.initTimeline();
+                this.showGenDetail('millennials');
             },
 
-            switchTab(tabId) {
-                ['view-home', 'view-explore', 'view-quiz'].forEach(id => document.getElementById(id).classList.add('hidden'));
-                document.getElementById(`view-${tabId}`).classList.remove('hidden');
-                if(tabId === 'quiz' && !this.state.quiz.active) {
-                    document.getElementById('quiz-setup').classList.remove('hidden');
-                    document.getElementById('quiz-play').classList.add('hidden');
-                    document.getElementById('quiz-hud').classList.add('hidden');
-                    document.getElementById('quiz-dashboard').classList.add('hidden');
-                }
+            switchTab(tab) {
+                ['home', 'explore', 'quiz'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+                document.getElementById(`view-${tab}`).classList.remove('hidden');
+                ['explore', 'quiz'].forEach(t => {
+                    const btn = document.getElementById(`nav-${t}`);
+                    btn.className = (tab === t) ? "px-5 py-2 bg-white/10 text-white rounded-xl text-sm font-black" : "px-5 py-2 rounded-xl text-sm font-black text-slate-400 hover:text-white";
+                });
+                if(tab === 'quiz') this.resetToSetup();
                 window.scrollTo(0,0);
+            },
+
+            resetToSetup() {
+                this.state.quiz.active = false;
+                document.getElementById('quiz-setup').classList.remove('hidden');
+                document.getElementById('quiz-play').classList.add('hidden');
+                document.getElementById('quiz-hud').classList.add('hidden');
+                document.getElementById('quiz-dashboard').classList.add('hidden');
+            },
+
+            renderArchiveSidebar() {
+                const list = document.getElementById('archive-sidebar');
+                list.innerHTML = gens.map(g => `
+                    <button onclick="app.showGenDetail('${g.id}')" id="side-${g.id}" class="archive-sidebar-item w-full p-4 glass rounded-2xl flex items-center gap-4 text-left border-white/5">
+                        <span class="text-2xl">${g.icon}</span>
+                        <div class="overflow-hidden">
+                            <div class="text-xs font-black text-white truncate">${g.name}</div>
+                            <div class="text-[8px] font-bold text-slate-500 uppercase">${g.start}—${g.end}</div>
+                        </div>
+                    </button>
+                `).join('');
+            },
+
+            showGenDetail(id) {
+                this.state.viewed.add(id);
+                gens.forEach(g => {
+                    document.getElementById(`side-${g.id}`).classList.toggle('border-amber-400', g.id === id);
+                    document.getElementById(`side-${g.id}`).classList.toggle('bg-amber-400/5', g.id === id);
+                });
+                const p = Math.round((this.state.viewed.size / gens.length) * 100);
+                document.getElementById('discovery-percent').innerText = p + '%';
+                document.getElementById('discovery-bar').style.width = p + '%';
+
+                const g = gens.find(x => x.id === id);
+                document.getElementById('archive-detail-container').innerHTML = `
+                    <div class="animate-content grid grid-cols-1 md:grid-cols-12 gap-6">
+                        <div class="md:col-span-8 glass p-10 rounded-[3rem] border-white/5 relative overflow-hidden">
+                            <div class="relative z-10">
+                                <h2 class="text-5xl font-black italic mb-2 tracking-tighter">${g.name}</h2>
+                                <p class="text-[10px] font-black uppercase text-amber-400 mb-8 tracking-[0.3em]">Era Mood: ${g.vibe}</p>
+                                <p class="text-xl text-slate-300 leading-relaxed mb-10">"${g.summary}"</p>
+                                
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-8 pt-8 border-t border-white/5">
+                                    <div>
+                                        <h4 class="text-[9px] font-black uppercase text-slate-500 mb-4 tracking-widest">Global Impact</h4>
+                                        <p class="text-sm font-medium leading-relaxed">${g.impact}</p>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-[9px] font-black uppercase text-slate-500 mb-4 tracking-widest">Economic Context</h4>
+                                        <p class="text-sm font-medium leading-relaxed">${g.economy}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="absolute -bottom-10 -right-10 text-[15rem] opacity-[0.03] select-none">${g.icon}</div>
+                        </div>
+
+                        <div class="md:col-span-4 space-y-6">
+                            <div class="glass p-8 rounded-[2.5rem] border-white/5">
+                                <h4 class="text-[9px] font-black uppercase text-slate-500 mb-6 tracking-widest">Cultural Icons</h4>
+                                <p class="text-xs italic text-slate-300 leading-loose">${g.icons}</p>
+                            </div>
+                            <div class="glass p-8 rounded-[2.5rem] border-amber-400/20 bg-amber-400/5">
+                                <h4 class="text-[9px] font-black uppercase text-amber-400 mb-4 tracking-widest">Sociological Archetype</h4>
+                                <div class="flex items-center gap-3">
+                                    <div class="w-1.5 h-1.5 rounded-full bg-amber-400 shadow-[0_0_8px_var(--accent)]"></div>
+                                    <span class="text-lg font-black italic">${g.archetype}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            },
+
+            initTimeline() {
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: gens.map(g => g.name),
+                        datasets: [{ data: gens.map(g => [g.start, g.end]), backgroundColor: gens.map(g => g.color + '22'), borderColor: gens.map(g => g.color), borderWidth: 2, borderRadius: 10, borderSkipped: false }]
+                    },
+                    options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { min: 1880, max: 2030, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#475569' } }, y: { display: false } } }
+                });
             },
 
             renderFocusOptions() {
                 const container = document.getElementById('focus-options');
                 container.innerHTML = gens.map(g => `
-                    <div class="relative">
+                    <div>
                         <input type="checkbox" id="focus-${g.id}" value="${g.id}" class="hidden gen-checkbox" checked>
-                        <label for="focus-${g.id}" class="block p-4 rounded-2xl border border-white/5 glass-hover cursor-pointer text-[10px] font-black uppercase tracking-widest transition-all text-center">
+                        <label for="focus-${g.id}" class="block p-4 rounded-xl border border-white/5 glass cursor-pointer text-[10px] font-black uppercase text-center transition-all hover:border-amber-400">
                             ${g.name}
                         </label>
                     </div>
                 `).join('');
             },
 
-            renderGenList() {
-                const list = document.getElementById('gen-list');
-                list.innerHTML = gens.map(g => `
-                    <button onclick="app.showDossier('${g.id}')" class="w-full text-left p-6 rounded-3xl glass glass-hover transition-all flex items-center gap-5 border-white/5">
-                        <span class="text-4xl filter drop-shadow-md">${g.icon}</span>
-                        <div>
-                            <div class="font-black text-white text-lg leading-tight">${g.name}</div>
-                            <div class="text-[10px] text-amber-400 font-bold uppercase tracking-widest opacity-80">${g.start}—${g.end}</div>
-                        </div>
-                    </button>
-                `).join('');
-                this.showDossier('millennials');
-            },
-
-            showDossier(id) {
-                const g = gens.find(x => x.id === id);
-                document.getElementById('gen-detail').innerHTML = `
-                    <div class="animate-in relative z-10">
-                        <div class="flex flex-wrap items-center justify-between gap-6 mb-12 pb-8 border-b border-white/5">
-                            <div class="flex items-center gap-8">
-                                <div class="w-24 h-24 rounded-[2rem] bg-amber-400 flex items-center justify-center text-5xl shadow-2xl shadow-amber-400/30 text-slate-950">${g.icon}</div>
-                                <div>
-                                    <h2 class="text-5xl font-black text-white tracking-tighter">${g.name}</h2>
-                                    <p class="text-amber-400 font-black uppercase tracking-[0.3em] text-[10px]">Temporal Cluster ${g.start}</p>
-                                </div>
-                            </div>
-                            <div class="px-8 py-3 rounded-2xl bg-white/5 border border-white/10 text-2xl font-mono text-slate-300 font-bold tracking-tighter">${g.start} — ${g.end}</div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-12">
-                            <div class="space-y-8">
-                                <div>
-                                    <h4 class="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4">Psychographic Profile</h4>
-                                    <p class="text-slate-300 text-xl leading-relaxed font-medium">The ${g.name} represents a fundamental pivot in the generational wheel. Born into the ${g.id === 'lost' || g.id === 'greatest' ? 'industrial' : 'information'} era, their values were forged by systemic shifts in global communication and economic stability.</p>
-                                </div>
-                                <div class="flex gap-3">
-                                    <span class="px-4 py-2 bg-amber-400/10 rounded-xl text-xs font-black text-amber-400 border border-amber-400/20">RESILIENT</span>
-                                    <span class="px-4 py-2 bg-indigo-500/10 rounded-xl text-xs font-black text-indigo-400 border border-indigo-500/20">ADAPTIVE</span>
-                                    <span class="px-4 py-2 bg-emerald-500/10 rounded-xl text-xs font-black text-emerald-400 border border-emerald-500/20">TRANSFORMATIVE</span>
-                                </div>
-                            </div>
-                            <div class="p-10 rounded-[3rem] bg-gradient-to-br from-indigo-500/10 to-transparent border border-white/5">
-                                <h4 class="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-6">Era Impact Score</h4>
-                                <div class="space-y-4">
-                                    <div class="h-2 w-full bg-white/5 rounded-full"><div class="h-full bg-indigo-500 rounded-full" style="width: 85%"></div></div>
-                                    <p class="text-slate-400 text-sm italic leading-relaxed">"This cohort navigated the peak of their era's technological curve, leaving a legacy of structural reform that dictates how the following generations interact with institutional power."</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="absolute -bottom-20 -right-20 w-64 h-64 bg-amber-400 opacity-[0.03] rounded-full blur-3xl"></div>
-                `;
-            },
-
-            initTimeline() {
-                const ctx = document.getElementById('timelineChart').getContext('2d');
-                this.state.charts.timeline = new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: gens.map(g => g.name),
-                        datasets: [{
-                            data: gens.map(g => [g.start, g.end]),
-                            backgroundColor: gens.map(g => g.color + '22'),
-                            borderColor: gens.map(g => g.color),
-                            borderWidth: 2,
-                            borderRadius: 12,
-                            borderSkipped: false
-                        }]
-                    },
-                    options: {
-                        indexAxis: 'y',
-                        responsive: true, maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: {
-                            x: { min: 1880, max: 2030, grid: { color: 'rgba(255,255,255,0.03)' }, ticks: { color: '#64748b', font: { weight: 'bold' } } },
-                            y: { grid: { display: false }, ticks: { color: '#f8fafc', font: { weight: 'bold', size: 10 } } }
-                        },
-                        onClick: (e, el) => { if(el.length) this.showDossier(gens[el[0].index].id); }
-                    }
-                });
-            },
-
-            // --- QUIZ LOGIC ---
             startQuiz() {
-                const checked = Array.from(document.querySelectorAll('.gen-checkbox:checked')).map(c => c.value);
-                if(checked.length === 0) return;
-
-                this.state.quiz = {
-                    active: true, score: 0, history: [],
-                    currentDiff: 0, qIdx: 0, total: 15,
-                    usedIds: [], mastery: {}, focus: checked,
-                    streak: 0, maxStreak: 0
-                };
-                
-                gens.forEach(g => this.state.quiz.mastery[g.id] = { correct: 0, total: 0 });
-
+                const focus = Array.from(document.querySelectorAll('.gen-checkbox:checked')).map(c => c.value);
+                if(focus.length === 0) return;
+                this.state.quiz = { active: true, score: 0, history: [], qIdx: 0, total: 15, used: [], streak: 0, maxStreak: 0, diff: 0, focus: focus, mastery: {} };
+                gens.forEach(g => this.state.quiz.mastery[g.id] = { c: 0, t: 0 });
                 document.getElementById('quiz-setup').classList.add('hidden');
                 document.getElementById('quiz-play').classList.remove('hidden');
                 document.getElementById('quiz-hud').classList.remove('hidden');
-                document.getElementById('quiz-dashboard').classList.add('hidden');
                 this.updateHud();
                 this.renderQuestion();
             },
 
             updateHud() {
-                document.getElementById('current-score').innerText = this.state.quiz.score;
-                document.getElementById('q-status').innerText = `${this.state.quiz.qIdx + 1} / ${this.state.quiz.total}`;
-                document.getElementById('progress-bar-inner').style.width = `${(this.state.quiz.qIdx / this.state.quiz.total) * 100}%`;
-                
-                // Difficulty Pills
-                for(let i=0; i<=3; i++) {
-                    const p = document.getElementById(`pill-${i}`);
-                    p.className = `w-3 h-3 rounded-full progression-pill ${i <= this.state.quiz.currentDiff ? 'active-pill' : 'bg-slate-800'}`;
-                }
-
-                // Streak UI
-                const streakEl = document.getElementById('streak-counter');
-                if(this.state.quiz.streak >= 2) {
-                    streakEl.innerText = `STREAK x${this.state.quiz.streak}`;
-                    streakEl.classList.remove('hidden');
-                    streakEl.classList.add('streak-badge');
-                } else {
-                    streakEl.classList.add('hidden');
-                }
+                document.getElementById('current-score').innerText = Math.round(this.state.quiz.score);
+                document.getElementById('q-status').innerText = `${this.state.quiz.qIdx + 1}/15`;
+                const p = document.getElementById('difficulty-pills');
+                p.innerHTML = [0,1,2,3].map(i => `<div class="w-2.5 h-2.5 rounded-full ${i <= this.state.quiz.diff ? 'bg-amber-400' : 'bg-white/10'}"></div>`).join('');
             },
 
             renderQuestion() {
-                let basePool = questions.filter(q => this.state.quiz.focus.includes(q.gen));
-                let available = basePool.filter(q => !this.state.quiz.usedIds.includes(q.q));
-                
-                // Attempt exact difficulty first
-                let finalPool = available.filter(q => q.diff === this.state.quiz.currentDiff);
-                
-                // If not found, try +/- 1 difficulty
-                if(finalPool.length === 0) {
-                    finalPool = available.filter(q => Math.abs(q.diff - this.state.quiz.currentDiff) <= 1);
-                }
-
-                // Ultimate fallback
-                if(finalPool.length === 0) finalPool = available;
-
-                const q = finalPool[Math.floor(Math.random() * finalPool.length)];
-                this.state.quiz.currentQ = q;
-                this.state.quiz.usedIds.push(q.q);
-
+                const pool = questions.filter(q => this.state.quiz.focus.includes(q.gen) && !this.state.quiz.used.includes(q.q));
+                const source = (pool.length > 0) ? pool : questions.filter(q => this.state.quiz.focus.includes(q.gen));
+                const q = source[Math.floor(Math.random() * source.length)];
+                this.state.quiz.current = q;
+                this.state.quiz.used.push(q.q);
                 document.getElementById('q-text').innerText = q.q;
                 document.getElementById('q-feedback').classList.add('hidden');
-                
-                const labels = ["General Info", "Historical Trivia", "Psychographics", "Advanced Theory"];
-                document.getElementById('difficulty-badge').innerText = labels[q.diff];
-                
-                const optContainer = document.getElementById('q-options');
-                optContainer.innerHTML = q.options.map((o, i) => `
-                    <button onclick="app.checkAnswer(${i})" class="opt-btn group p-8 rounded-3xl glass glass-hover text-left font-bold transition-all border-2 border-white/5 hover:border-amber-400">
-                        <div class="flex justify-between items-center">
-                            <span>${o}</span>
-                            <span class="opacity-0 group-hover:opacity-100 transition-opacity text-amber-400">➔</span>
-                        </div>
+                document.getElementById('difficulty-badge').innerText = `Level ${q.diff} Retrieval`;
+                document.getElementById('q-options').innerHTML = q.options.map((o, i) => `
+                    <button onclick="app.check(${i})" class="opt-btn p-8 rounded-2xl glass text-left font-bold border border-white/5 hover:border-amber-400 transition-all">
+                        ${o}
                     </button>
                 `).join('');
             },
 
-            checkAnswer(idx) {
-                const q = this.state.quiz.currentQ;
-                const isCorrect = idx === q.correct;
-                const btns = document.querySelectorAll('.opt-btn');
-                
-                btns.forEach(b => b.disabled = true);
-                this.state.quiz.mastery[q.gen].total++;
-                
-                if(isCorrect) {
+            check(idx) {
+                const q = this.state.quiz.current;
+                const ok = idx === q.correct;
+                this.state.quiz.mastery[q.gen].t++;
+                if(ok) {
                     this.state.quiz.streak++;
                     if(this.state.quiz.streak > this.state.quiz.maxStreak) this.state.quiz.maxStreak = this.state.quiz.streak;
-                    
-                    // Point Scaling: Base (100-300) + Streak Bonus
-                    let points = (100 + (q.diff * 60));
-                    if(this.state.quiz.streak >= 3) points *= 1.5;
-                    
-                    this.state.quiz.score += Math.round(points);
-                    this.state.quiz.mastery[q.gen].correct++;
-                    
-                    if(this.state.quiz.currentDiff < 3) this.state.quiz.currentDiff++;
-                    this.showFeedback(true, "Analysis Correct", q.exp);
-                    btns[idx].classList.add('border-green-500', 'bg-green-500/10');
+                    this.state.quiz.score += (100 + (q.diff * 50)) * (this.state.quiz.streak > 2 ? 1.5 : 1);
+                    this.state.quiz.mastery[q.gen].c++;
+                    if(this.state.quiz.diff < 3) this.state.quiz.diff++;
+                    this.showFeedback(true, "Correct Selection", q.exp);
                 } else {
                     this.state.quiz.streak = 0;
-                    if(this.state.quiz.currentDiff > 0) this.state.quiz.currentDiff--;
-                    this.showFeedback(false, "System Error", q.exp);
-                    btns[idx].classList.add('border-red-500', 'bg-red-500/10');
-                    btns[q.correct].classList.add('border-green-500/50');
+                    if(this.state.quiz.diff > 0) this.state.quiz.diff--;
+                    this.showFeedback(false, "Desync Error", q.exp);
                 }
-
-                this.state.quiz.history.push({ 
-                    q: q.q, 
-                    correct: isCorrect, 
-                    exp: q.exp, 
-                    userVal: q.options[idx], 
-                    correctVal: q.options[q.correct] 
-                });
+                document.querySelectorAll('.opt-btn').forEach(b => b.disabled = true);
+                this.state.quiz.history.push({ q: q.q, ok: ok, exp: q.exp, ans: q.options[q.correct], userAns: q.options[idx] });
                 this.updateHud();
             },
 
-            showFeedback(isCorrect, title, desc) {
+            showFeedback(ok, title, desc) {
                 const fb = document.getElementById('q-feedback');
                 fb.classList.remove('hidden');
-                fb.className = `glass p-10 rounded-[3rem] animate-in border-l-8 ${isCorrect ? 'border-green-500' : 'border-red-500'}`;
-                document.getElementById('fb-icon').innerText = isCorrect ? '🎯' : '⚠️';
+                fb.style.borderColor = ok ? '#22c55e' : '#ef4444';
+                document.getElementById('fb-icon').innerText = ok ? '🎯' : '❌';
                 document.getElementById('fb-title').innerText = title;
-                document.getElementById('fb-title').className = `text-2xl font-black mb-3 uppercase tracking-tight ${isCorrect ? 'text-green-500' : 'text-red-500'}`;
+                document.getElementById('fb-title').className = `text-xl font-black mb-2 uppercase ${ok ? 'text-green-400' : 'text-red-400'}`;
                 document.getElementById('fb-desc').innerText = desc;
             },
 
             nextQuestion() {
                 this.state.quiz.qIdx++;
-                if(this.state.quiz.qIdx >= this.state.quiz.total) this.renderDashboard();
+                if(this.state.quiz.qIdx >= this.state.quiz.total) this.finish();
                 else this.renderQuestion();
             },
 
-            renderDashboard() {
-                this.state.quiz.active = false;
+            finish() {
                 document.getElementById('quiz-play').classList.add('hidden');
                 document.getElementById('quiz-hud').classList.add('hidden');
                 document.getElementById('quiz-dashboard').classList.remove('hidden');
-
-                const correctCount = this.state.quiz.history.filter(h => h.correct).length;
-                document.getElementById('dash-score').innerText = this.state.quiz.score.toLocaleString();
-                document.getElementById('dash-accuracy').innerText = Math.round((correctCount/this.state.quiz.total)*100) + '%';
+                document.getElementById('dash-score').innerText = Math.round(this.state.quiz.score);
+                const acc = Math.round((this.state.quiz.history.filter(h => h.ok).length / 15) * 100);
+                document.getElementById('dash-accuracy').innerText = acc + '%';
                 document.getElementById('dash-streak').innerText = this.state.quiz.maxStreak;
-
                 this.initMasteryChart();
-
-                const list = document.getElementById('review-list');
-                list.innerHTML = this.state.quiz.history.map(h => `
-                    <div class="p-8 rounded-[2rem] border-2 ${h.correct ? 'border-green-500/10 bg-green-500/5' : 'border-red-500/10 bg-red-500/5'} transition-all hover:scale-[1.02]">
-                        <div class="flex justify-between items-start mb-6">
-                            <h5 class="font-bold text-white text-lg leading-tight pr-4">${h.q}</h5>
-                            <span class="shrink-0 text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full ${h.correct ? 'bg-green-500 text-slate-950' : 'bg-red-500 text-white'}">${h.correct ? 'PASS' : 'FAIL'}</span>
+                
+                document.getElementById('review-list').innerHTML = this.state.quiz.history.map(h => `
+                    <div class="p-6 rounded-2xl ${h.ok ? 'review-card-ok' : 'review-card-err'} transition-all hover:scale-[1.01]">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="${h.ok ? 'text-green-400' : 'text-red-400'} text-xs font-black uppercase tracking-widest">
+                                ${h.ok ? 'Success' : 'Incorrect'}
+                            </span>
                         </div>
-                        <div class="space-y-4">
-                            <p class="text-sm text-slate-500">Selected: <span class="${h.correct ? 'text-green-400' : 'text-red-400'} font-bold">${h.userVal}</span></p>
-                            <div class="p-4 bg-white/5 rounded-xl border border-white/5">
-                                <p class="text-sm text-slate-300 leading-relaxed italic">"${h.exp}"</p>
-                            </div>
-                        </div>
+                        <p class="text-sm font-bold text-white mb-3">${h.q}</p>
+                        ${!h.ok ? `<p class="text-[10px] text-red-300 line-through opacity-60 mb-1">Your choice: ${h.userAns}</p>` : ''}
+                        <p class="text-[10px] text-green-400 font-black mb-3 uppercase">Correct Answer: ${h.ans}</p>
+                        <p class="text-[11px] text-slate-400 italic leading-relaxed bg-black/20 p-3 rounded-lg border border-white/5">"${h.exp}"</p>
                     </div>
                 `).join('');
             },
 
             initMasteryChart() {
                 const ctx = document.getElementById('masteryChart').getContext('2d');
-                if(this.state.charts.mastery) this.state.charts.mastery.destroy();
-
-                const activeGens = gens.filter(g => this.state.quiz.focus.includes(g.id));
-                const labels = activeGens.map(g => g.name);
-                const data = activeGens.map(g => {
-                    const stats = this.state.quiz.mastery[g.id];
-                    return stats.total === 0 ? 0 : Math.round((stats.correct / stats.total) * 100);
-                });
-
-                this.state.charts.mastery = new Chart(ctx, {
+                const focusGens = gens.filter(g => this.state.quiz.focus.includes(g.id));
+                new Chart(ctx, {
                     type: 'radar',
                     data: {
-                        labels: labels,
+                        labels: focusGens.map(g => g.name),
                         datasets: [{
-                            label: 'Mastery Level',
-                            data: data,
-                            backgroundColor: 'rgba(251, 191, 36, 0.15)',
-                            borderColor: '#fbbf24',
-                            pointBackgroundColor: '#fbbf24',
-                            borderWidth: 4,
-                            pointRadius: 4
+                            data: focusGens.map(g => {
+                                const s = this.state.quiz.mastery[g.id];
+                                return s.t === 0 ? 0 : Math.round((s.c/s.t)*100);
+                            }),
+                            borderColor: '#fbbf24', backgroundColor: 'rgba(251, 191, 36, 0.1)', borderWidth: 2, pointBackgroundColor: '#fbbf24'
                         }]
                     },
-                    options: {
-                        responsive: true, maintainAspectRatio: false,
-                        scales: {
-                            r: {
-                                grid: { color: 'rgba(255,255,255,0.08)' },
-                                angleLines: { color: 'rgba(255,255,255,0.08)' },
-                                ticks: { display: false },
-                                pointLabels: { color: '#94a3b8', font: { size: 11, weight: '900' } },
-                                min: 0, max: 100
-                            }
-                        },
-                        plugins: { legend: { display: false } }
-                    }
+                    options: { responsive: true, maintainAspectRatio: false, scales: { r: { grid: { color: 'rgba(255,255,255,0.05)' }, angleLines: { color: 'rgba(255,255,255,0.05)' }, ticks: { display: false }, pointLabels: { color: '#94a3b8', font: { size: 10, weight: 'bold' } } } }, plugins: { legend: { display: false } } }
                 });
             }
         };

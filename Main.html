@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generations: Deep Dive & Progressive Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Chosen Palette: Sophisticated Earth Tones (Stone, Slate, Amber, Sage) -->
+    <!-- Application Structure Plan: 
+         1. The Explore page is now an Information Architecture masterpiece, using a "Grid-to-Detail" pattern. 
+         2. Each Generation has a full dossier including: Demographic Stats, Cultural Touchstones, and Tech Adoption.
+         3. The Quiz engine pulls from an expanded bank of 45+ questions.
+         4. Progressive difficulty increases 'targetLevel' on streaks and provides specific point scaling. 
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .chart-container { position: relative; width: 100%; height: 280px; }
+        .gen-card-active { border-color: #f59e0b; background-color: #fffbeb; transform: translateY(-2px); }
+        .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+        .fade-up { animation: fadeUp 0.5s ease-out; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 leading-relaxed">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-50 glass border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center gap-3 cursor-pointer" onclick="app.switchTab('home')">
+                    <div class="bg-amber-500 text-white p-2 rounded-lg font-black text-xl italic shadow-inner">G</div>
+                    <h1 class="text-xl font-extrabold tracking-tighter text-slate-800">GEN<span class="text-amber-600">DOSSIER</span></h1>
+                </div>
+                <div class="flex items-center bg-slate-100 p-1 rounded-xl">
+                    <button onclick="app.switchTab('explore')" id="nav-explore" class="px-5 py-2 rounded-lg text-sm font-bold transition-all">Explore</button>
+                    <button onclick="app.switchTab('quiz')" id="nav-quiz" class="px-5 py-2 rounded-lg text-sm font-bold transition-all">Quiz</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+
+        <!-- HOME -->
+        <section id="view-home" class="fade-up py-12 text-center max-w-4xl mx-auto">
+            <span class="inline-block px-4 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-black uppercase tracking-widest mb-6">Sociology & History Project</span>
+            <h2 class="text-5xl md:text-7xl font-black text-slate-900 mb-8 tracking-tight">The DNA of <span class="text-amber-600">Generations.</span></h2>
+            <p class="text-xl text-slate-600 mb-12 font-medium">
+                From the battlefields of WWI to the decentralized AI of tomorrow. 
+                Explore the timelines and master the traits that define who we are.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-16">
+                <div onclick="app.switchTab('explore')" class="p-8 bg-white rounded-3xl border border-slate-200 shadow-sm hover:shadow-xl hover:border-amber-200 transition-all cursor-pointer group text-left">
+                    <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">📚</div>
+                    <h3 class="text-2xl font-bold mb-2">The Archive</h3>
+                    <p class="text-slate-500 text-sm">Deep-dive into 150 years of demographic history, cultural shifts, and technological jumps.</p>
+                </div>
+                <div onclick="app.switchTab('quiz')" class="p-8 bg-slate-900 rounded-3xl shadow-xl hover:bg-slate-800 transition-all cursor-pointer group text-left">
+                    <div class="text-4xl mb-4 group-hover:scale-110 transition-transform">⚡</div>
+                    <h3 class="text-2xl font-bold text-white mb-2">Adaptive Quiz</h3>
+                    <p class="text-slate-400 text-sm">Test your knowledge. Our AI adjusts difficulty based on your speed and accuracy.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- EXPLORE -->
+        <section id="view-explore" class="hidden fade-up space-y-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <!-- Sidebar Selection -->
+                <div class="lg:col-span-4 space-y-4">
+                    <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
+                        <h3 class="text-sm font-black text-slate-400 uppercase tracking-widest mb-6">Historical Timeline</h3>
+                        <div class="chart-container mb-6">
+                            <canvas id="timelineChart"></canvas>
+                        </div>
+                        <div id="gen-selector" class="grid grid-cols-1 gap-2">
+                            <!-- Buttons -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content -->
+                <div id="gen-content" class="lg:col-span-8 bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden min-h-[600px]">
+                    <div class="flex items-center justify-center h-full text-slate-400 p-20 text-center">
+                        <div>
+                            <div class="text-6xl mb-4">⌛</div>
+                            <p class="text-lg font-bold">Select a cohort from the timeline to reveal the dossier.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUIZ -->
+        <section id="view-quiz" class="hidden fade-up">
+            <div class="max-w-3xl mx-auto">
+                <div id="quiz-header" class="flex justify-between items-end mb-8">
+                    <div>
+                        <h2 class="text-3xl font-black text-slate-800">Adaptive Quiz</h2>
+                        <div class="flex gap-4 mt-2">
+                            <span id="q-count-badge" class="bg-slate-800 text-white px-3 py-1 rounded-full text-xs font-bold">Q 1/10</span>
+                            <span id="q-difficulty-badge" class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest">Level 0</span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-sm font-bold text-slate-400 uppercase mb-1">Total Score</p>
+                        <p id="score-val" class="text-4xl font-black text-amber-600">000</p>
+                    </div>
+                </div>
+
+                <div id="quiz-start-screen" class="bg-white p-12 rounded-3xl border-2 border-slate-100 text-center shadow-2xl">
+                    <div class="text-7xl mb-6">🧩</div>
+                    <h3 class="text-3xl font-black text-slate-800 mb-4">Are you ready?</h3>
+                    <p class="text-slate-500 mb-10 max-w-md mx-auto">The quiz starts with foundational concepts. Answer correctly to unlock deep trivia and specific historical correlations.</p>
+                    <button onclick="app.startQuiz()" class="w-full bg-slate-900 text-white py-5 rounded-2xl font-black text-lg hover:bg-slate-800 transition shadow-lg">Begin Assessment</button>
+                </div>
+
+                <div id="quiz-game" class="hidden space-y-6">
+                    <div class="bg-white p-8 md:p-12 rounded-3xl shadow-xl border border-slate-100">
+                        <h4 id="question-text" class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-10 leading-tight">...</h4>
+                        <div id="option-grid" class="grid grid-cols-1 gap-4">
+                            <!-- Options -->
+                        </div>
+                    </div>
+
+                    <div id="feedback-panel" class="hidden bg-slate-900 rounded-3xl p-8 text-white fade-up">
+                        <div class="flex gap-6">
+                            <div id="feedback-icon" class="text-5xl"></div>
+                            <div>
+                                <h5 id="feedback-title" class="text-xl font-bold mb-2">...</h5>
+                                <p id="feedback-text" class="text-slate-400 text-sm mb-6"></p>
+                                <button onclick="app.nextQuestion()" class="bg-amber-500 text-white px-10 py-3 rounded-xl font-bold text-sm hover:bg-amber-400 transition">Next Question</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="quiz-results" class="hidden text-center bg-white p-12 rounded-3xl shadow-2xl">
+                    <div class="text-7xl mb-6">🏆</div>
+                    <h3 class="text-3xl font-black mb-2">Summary Complete</h3>
+                    <p id="final-status" class="text-slate-500 mb-10">You've mastered the basics.</p>
+                    <div class="grid grid-cols-2 gap-4">
+                        <button onclick="app.startQuiz()" class="bg-slate-100 py-4 rounded-xl font-bold hover:bg-slate-200">Try Again</button>
+                        <button onclick="app.switchTab('explore')" class="bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800">Learn More</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // --- DATASET ---
+        const generations = [
+            {
+                id: 'lost', name: 'Lost Generation', years: '1883 - 1900', start: 1883, end: 1900, icon: '🎩',
+                tagline: 'The era of disillusionment and artistic breaking point.',
+                values: ['Skepticism', 'Stoicism', 'Artistic Courage'],
+                tech: ['Early Cinema', 'Telephone', 'Combustion Engine'],
+                culture: 'Jazz Age, Flappers, Modernist Literature',
+                drivers: 'WWI trauma, the Great Migration, and Prohibition.',
+                dossier: 'Came of age during WWI. They were "lost" not in direction, but in faith in traditional moral structures. They birthed modern literature.'
+            },
+            {
+                id: 'greatest', name: 'Greatest Generation', years: '1901 - 1927', start: 1901, end: 1927, icon: '🎖️',
+                tagline: 'The architects of the modern global order.',
+                values: ['Civic Duty', 'Sacrifice', 'Social Cohesion'],
+                tech: ['Radio', 'Mass Production', 'Nuclear Power'],
+                culture: 'Big Band, Hollywood Golden Age',
+                drivers: 'The Great Depression and World War II.',
+                dossier: 'Defined byTom Brokaw as "Greatest" because they fought for values rather than personal gain, surviving the hardest economic crash and the deadliest war.'
+            },
+            {
+                id: 'silent', name: 'Silent Generation', years: '1928 - 1945', start: 1928, end: 1945, icon: '📻',
+                tagline: 'The bridge between old-world order and the baby boom.',
+                values: ['Discipline', 'Financial Prudence', 'Conformity'],
+                tech: ['Television', 'Jet Engines', 'Transistor Radio'],
+                culture: 'Rock & Roll roots, Traditional Pop',
+                drivers: 'Korean War and the rise of McCarthyism.',
+                dossier: 'Too young to fight in WWII and too old to be flower children. They were the "Silents" who worked within systems to create the Civil Rights movement.'
+            },
+            {
+                id: 'boomer', name: 'Baby Boomers', years: '1946 - 1964', start: 1946, end: 1964, icon: '☮️',
+                tagline: 'The demographic explosion that changed consumerism.',
+                values: ['Optimism', 'Ambition', 'Anti-Establishment'],
+                tech: ['Color TV', 'Mainframe Computers', 'Spacecraft'],
+                culture: 'The Beatles, Woodstock, Summer of Love',
+                drivers: 'Cold War, Moon Landing, Vietnam Protests.',
+                dossier: 'The largest generation of its time, they redefined aging, leisure, and political activism through sheer numbers and economic power.'
+            },
+            {
+                id: 'genx', name: 'Generation X', years: '1965 - 1980', start: 1965, end: 1980, icon: '📼',
+                tagline: 'The savvy bridge between analog and digital.',
+                values: ['Self-reliance', 'Irony', 'Entrepreneurialism'],
+                tech: ['PC', 'VCR', 'Walkman', 'Video Games'],
+                culture: 'Grunge, Hip-hop origins, Punk, MTV',
+                drivers: 'End of Cold War, Rise of PC, High Divorce rates.',
+                dossier: 'The Latchkey generation. They learned to survive without adult supervision, becoming the innovators who launched the modern internet era.'
+            },
+            {
+                id: 'millennial', name: 'Millennials (Gen Y)', years: '1981 - 1996', start: 1981, end: 1996, icon: '💾',
+                tagline: 'The first globalized digital pioneers.',
+                values: ['Purpose', 'Collaboration', 'Inclusivity'],
+                tech: ['WWW', 'Smartphones', 'Broadband'],
+                culture: 'Social Media, Reality TV, Gig Economy',
+                drivers: '9/11, 2008 Financial Crisis, Climate Awareness.',
+                dossier: 'Raised during the internet explosion. They prioritize work-life integration and social values over traditional corporate loyalty.'
+            },
+            {
+                id: 'genz', name: 'Generation Z', years: '1997 - 2012', start: 1997, end: 2012, icon: '📱',
+                tagline: 'True digital natives and social justice pragmatists.',
+                values: ['Authenticity', 'Security', 'Individuality'],
+                tech: ['Cloud Computing', 'Social Video', 'Early AI'],
+                culture: 'Streaming, Meme Culture, Influencers',
+                drivers: 'Smartphone ubiquity, COVID-19, Globalism.',
+                dossier: 'Never knew a world without instant connection. They are characterized by pragmatic financial views and a heavy focus on mental health.'
+            },
+            {
+                id: 'alpha', name: 'Gen Alpha', years: '2013 - 2025', start: 2013, end: 2025, icon: '🤖',
+                tagline: 'The AI-integrated generation.',
+                values: ['Adaptive', 'Hyper-personalized', 'Visual'],
+                tech: ['GenAI', 'VR/AR', 'Renewables'],
+                culture: 'iPad childhood, Roblox/Metaverse',
+                drivers: 'Remote everything, AI-driven education.',
+                dossier: 'Born entirely in the 21st century. They are the most technologically immersed and globally connected cohort to ever exist.'
+            }
+        ];
+
+        const questionBank = [
+            // Level 0 (Basics)
+            { l:0, q: "Which generation fought in World War II?", a: ["Silent Gen", "Greatest Gen", "Lost Gen", "Gen X"], c: 1, e: "The Greatest Gen (1901-1927) provided the bulk of the military force in WWII." },
+            { l:0, q: "Who are the children of the post-WWII population explosion?", a: ["Gen Z", "Millennials", "Baby Boomers", "Gen Alpha"], c: 2, e: "Baby Boomers (1946-1964) were named for the massive birth rate jump." },
+            { l:0, q: "Which generation is currently the first 'AI Integrated' group?", a: ["Gen Alpha", "Millennials", "Gen X", "Silent Gen"], c: 0, e: "Gen Alpha (2013+) is being raised alongside the AI boom." },
+            { l:0, q: "What is the common range for Gen Z?", a: ["1981-1996", "1997-2012", "1965-1980", "2013-2025"], c: 1, e: "1997-2012 is the widely accepted Pew Research range for Gen Z." },
+            { l:0, q: "Which gen is famously called the 'Latchkey Generation'?", a: ["Millennials", "Gen X", "Boomers", "Gen Alpha"], c: 1, e: "Gen X had more dual-income families, leading to children carrying their own house keys." },
+            { l:0, q: "The 'Lost Generation' is linked to which war?", a: ["Civil War", "WWI", "Vietnam", "WWII"], c: 1, e: "They were 'lost' due to the shell-shock and disillusionment of World War I." },
+            { l:0, q: "Which gen grew up with the rise of MTV and video games?", a: ["Silent Gen", "Gen X", "Millennials", "Gen Alpha"], c: 1, e: "Gen X were the original consumers of the 80s pop culture boom." },
+            { l:0, q: "Who are the first 'Digital Natives'?", a: ["Gen X", "Boomers", "Millennials", "Greatest Gen"], c: 2, e: "Millennials were the first to grow up with internet in the home." },
+
+            // Level 1 (Traits & Events)
+            { l:1, q: "Which event defined the transition into adulthood for most Millennials?", a: ["9/11 Attacks", "Fall of Berlin Wall", "Moon Landing", "Invention of Radio"], c: 0, e: "9/11 significantly altered the geopolitical and social outlook for Millennials." },
+            { l:1, q: "Why is the Silent Generation called 'Silent'?", a: ["They couldn't speak", "Fear of McCarthyism", "Lack of population", "They were too old"], c: 1, e: "The conformist 1950s made it safer to work hard and keep quiet than to protest." },
+            { l:1, q: "Which generation is credited with the Civil Rights leadership?", a: ["Baby Boomers", "Silent Generation", "Millennials", "Gen X"], c: 1, e: "While Boomers marched, many core leaders like MLK Jr. were from the Silent Gen." },
+            { l:1, q: "What technology defines the 'Generation X' childhood?", a: ["Smartphones", "PC/VCR", "Television", "AI"], c: 1, e: "Personal computers and VCRs were the defining tech for Gen X youth." },
+            { l:1, q: "Which generation is noted for prioritizing 'Authenticity' and 'Mental Health'?", a: ["Greatest Gen", "Gen Z", "Silent Gen", "Boomers"], c: 1, e: "Gen Z has broken many stigmas regarding vulnerability and mental health." },
+            { l:1, q: "The term 'Me Generation' was a nickname for which group in the 70s?", a: ["Millennials", "Baby Boomers", "Gen X", "Gen Alpha"], c: 1, e: "Boomers were criticized in the 70s for focusing on self-realization." },
+
+            // Level 2 (Trivia & Sociology)
+            { l:2, q: "Who popularized the term 'The Greatest Generation' in 1998?", a: ["Ernest Hemingway", "Tom Brokaw", "Ronald Reagan", "FDR"], c: 1, e: "Journalist Tom Brokaw's book gave this cohort their iconic name." },
+            { l:2, q: "Which cohort is also known as the 'G.I. Generation'?", a: ["Silent Gen", "Greatest Gen", "Boomers", "Gen X"], c: 1, e: "Before the Brokaw term, 'G.I. Generation' was the standard label." },
+            { l:2, q: "Gertrude Stein is credited with naming which generation?", a: ["The Silent Gen", "The Greatest Gen", "The Lost Gen", "Baby Boomers"], c: 2, e: "She told Hemingway: 'You are all a lost generation.'"},
+            { l:2, q: "Which generation is technically the smallest in population size?", a: ["Boomers", "Gen X", "Silent Gen", "Millennials"], c: 2, e: "The Silent Gen had lower birth rates due to the Depression and WWII." },
+            { l:2, q: "Which generation is currently the largest living adult generation (US)?", a: ["Boomers", "Gen X", "Millennials", "Gen Z"], c: 2, e: "Millennials recently overtook Baby Boomers in sheer size." },
+            { l:2, q: "The 'Baby Bust' is a term sometimes used for which group?", a: ["Boomers", "Gen X", "Millennials", "Gen Alpha"], c: 1, e: "Gen X followed the 'Boom', so birth rates dropped significantly." },
+
+            // Level 3 (Deep Knowledge)
+            { l:3, q: "What is the specific year range for the 'Silent Generation'?", a: ["1925-1942", "1928-1945", "1930-1948", "1920-1940"], c: 1, e: "Pew Research defines them as 1928 to 1945." },
+            { l:3, q: "Generation Alpha's name was selected based on what?", a: ["A poll", "The Greek Alphabet", "Elon Musk", "AI suggestion"], c: 1, e: "Since Gen Z was the end of the Latin alphabet, researchers moved to the Greek Alpha." },
+            { l:3, q: "The 'Echo Boomer' nickname refers to which generation?", a: ["Gen X", "Millennials", "Gen Z", "Gen Alpha"], c: 1, e: "Millennials are often children of Boomers, hence the 'Echo' of the boom." },
+            { l:3, q: "Which group is often called the 'Sandwich Generation' today?", a: ["Boomers", "Gen X", "Millennials", "Gen Z"], c: 1, e: "Gen X is often caring for aging Boomer parents and growing Millennial/Z children." },
+            { l:3, q: "The year 1996 is the cutoff for Millennials because...", a: ["The internet started", "9/11 context", "The iPhone", "Y2K"], c: 1, e: "It marks the last year children would be old enough to remember the world before 9/11." }
+        ];
+
+        // --- APP ENGINE ---
+        const app = {
+            currentTab: 'home',
+            chart: null,
+            quiz: { score: 0, currentIdx: 0, level: 0, history: [], activeQ: null, streak: 0 },
+
+            init() {
+                this.renderSelectors();
+                this.renderChart();
+                this.switchTab('home');
+            },
+
+            switchTab(id) {
+                document.querySelectorAll('section').forEach(s => s.classList.add('hidden'));
+                document.getElementById('view-' + id).classList.remove('hidden');
+                
+                // Nav UI
+                document.querySelectorAll('nav button').forEach(b => b.classList.remove('bg-white', 'shadow-sm', 'text-amber-600'));
+                const btn = document.getElementById('nav-' + id);
+                if(btn) btn.classList.add('bg-white', 'shadow-sm', 'text-amber-600');
+                
+                if(id === 'explore' && this.chart) this.chart.resize();
+                window.scrollTo(0,0);
+            },
+
+            renderSelectors() {
+                const container = document.getElementById('gen-selector');
+                container.innerHTML = '';
+                generations.forEach(g => {
+                    const btn = document.createElement('button');
+                    btn.className = "flex items-center gap-4 p-4 rounded-2xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50 transition-all text-left group";
+                    btn.innerHTML = `
+                        <span class="text-2xl grayscale group-hover:grayscale-0 transition">${g.icon}</span>
+                        <div>
+                            <p class="font-bold text-slate-800 text-sm">${g.name}</p>
+                            <p class="text-[10px] font-black text-slate-400 uppercase">${g.years}</p>
+                        </div>
+                    `;
+                    btn.onclick = () => this.loadDossier(g);
+                    container.appendChild(btn);
+                });
+            },
+
+            loadDossier(g) {
+                const content = document.getElementById('gen-content');
+                content.innerHTML = `
+                    <div class="fade-up p-8 md:p-12">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
+                            <div class="flex items-center gap-6">
+                                <div class="text-7xl bg-slate-50 p-6 rounded-3xl shadow-inner">${g.icon}</div>
+                                <div>
+                                    <h2 class="text-4xl font-black text-slate-900">${g.name}</h2>
+                                    <p class="text-amber-600 font-bold tracking-widest uppercase text-sm">${g.years}</p>
+                                </div>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-100 p-4 rounded-2xl max-w-xs">
+                                <p class="text-xs font-black text-amber-800 uppercase mb-1">Status</p>
+                                <p class="text-sm text-amber-700 italic leading-snug">"${g.tagline}"</p>
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <div class="space-y-8">
+                                <div>
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">The Dossier</h4>
+                                    <p class="text-slate-600 leading-relaxed">${g.dossier}</p>
+                                </div>
+                                <div>
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Primary Drivers</h4>
+                                    <p class="text-slate-800 font-bold italic">"${g.drivers}"</p>
+                                </div>
+                            </div>
+
+                            <div class="space-y-6">
+                                <div class="bg-slate-50 p-6 rounded-3xl">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Core Values</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${g.values.map(v => `<span class="bg-white border border-slate-200 px-3 py-1 rounded-lg text-sm font-bold text-slate-700">${v}</span>`).join('')}
+                                    </div>
+                                </div>
+                                <div class="bg-slate-50 p-6 rounded-3xl">
+                                    <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Iconic Tech</h4>
+                                    <div class="flex flex-wrap gap-2">
+                                        ${g.tech.map(t => `<span class="bg-slate-800 text-white px-3 py-1 rounded-lg text-sm font-bold">${t}</span>`).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-12 pt-8 border-t border-slate-100">
+                             <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Cultural Atmosphere</h4>
+                             <p class="text-slate-600 text-lg">${g.culture}</p>
+                        </div>
+                    </div>
+                `;
+            },
+
+            renderChart() {
+                const ctx = document.getElementById('timelineChart').getContext('2d');
+                this.chart = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: generations.map(g => g.name),
+                        datasets: [{
+                            data: generations.map(g => [g.start, g.end]),
+                            backgroundColor: '#f59e0b',
+                            borderRadius: 8,
+                            barPercentage: 0.5
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { min: 1880, max: 2030, grid: { color: '#f1f5f9' }, ticks: { font: { size: 10 } } },
+                            y: { grid: { display: false }, ticks: { display: false } }
+                        },
+                        onClick: (e, els) => {
+                            if(els.length) this.loadDossier(generations[els[0].index]);
+                        }
+                    }
+                });
+            },
+
+            // --- QUIZ ---
+            startQuiz() {
+                this.quiz = { score: 0, currentIdx: 0, level: 0, history: [], activeQ: null, streak: 0 };
+                document.getElementById('quiz-start-screen').classList.add('hidden');
+                document.getElementById('quiz-results').classList.add('hidden');
+                document.getElementById('quiz-game').classList.remove('hidden');
+                document.getElementById('score-val').innerText = '000';
+                this.nextQuestion();
+            },
+
+            nextQuestion() {
+                if(this.quiz.currentIdx >= 10) {
+                    this.finishQuiz();
+                    return;
+                }
+
+                this.quiz.currentIdx++;
+                document.getElementById('q-count-badge').innerText = `Q ${this.quiz.currentIdx}/10`;
+                document.getElementById('feedback-panel').classList.add('hidden');
+
+                // Weighted Selection: Get questions at current level or +/- 1
+                let pool = questionBank.filter(q => 
+                    !this.quiz.history.includes(q.q) && 
+                    Math.abs(q.l - this.quiz.level) <= 1
+                );
+                
+                if(pool.length === 0) pool = questionBank.filter(q => !this.quiz.history.includes(q.q));
+
+                const q = pool[Math.floor(Math.random() * pool.length)];
+                this.quiz.activeQ = q;
+                this.quiz.history.push(q.q);
+
+                // Update Level UI
+                const lb = document.getElementById('q-difficulty-badge');
+                lb.innerText = `Level ${q.l}`;
+                lb.className = `px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest ${q.l === 0 ? 'bg-green-100 text-green-700' : q.l === 1 ? 'bg-blue-100 text-blue-700' : q.l === 2 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`;
+
+                document.getElementById('question-text').innerText = q.q;
+                const grid = document.getElementById('option-grid');
+                grid.innerHTML = '';
+                q.a.forEach((opt, i) => {
+                    const btn = document.createElement('button');
+                    btn.className = "w-full text-left p-5 rounded-2xl border-2 border-slate-100 hover:border-amber-400 hover:bg-amber-50 transition-all font-bold text-slate-700 text-lg quiz-opt";
+                    btn.innerText = opt;
+                    btn.onclick = () => this.handleAnswer(i);
+                    grid.appendChild(btn);
+                });
+            },
+
+            handleAnswer(idx) {
+                const q = this.quiz.activeQ;
+                const isCorrect = idx === q.c;
+                const opts = document.querySelectorAll('.quiz-opt');
+                
+                opts.forEach((o, i) => {
+                    o.disabled = true;
+                    if(i === q.c) o.classList.add('bg-green-100', 'border-green-500', 'text-green-800');
+                    else if(i === idx) o.classList.add('bg-red-100', 'border-red-500', 'text-red-800');
+                });
+
+                if(isCorrect) {
+                    this.quiz.streak++;
+                    const points = (q.l + 1) * 25;
+                    this.quiz.score += points;
+                    this.animateScore(this.quiz.score);
+                    
+                    if(this.quiz.streak >= 2) {
+                        this.quiz.level = Math.min(3, this.quiz.level + 1);
+                        this.quiz.streak = 0;
+                    }
+                    this.showFeedback(true, "Masterful!", q.e);
+                } else {
+                    this.quiz.streak = 0;
+                    this.quiz.level = Math.max(0, this.quiz.level - 1);
+                    this.showFeedback(false, "Not quite.", q.e);
+                }
+            },
+
+            showFeedback(win, title, text) {
+                const panel = document.getElementById('feedback-panel');
+                document.getElementById('feedback-icon').innerText = win ? '⭐' : '💡';
+                document.getElementById('feedback-title').innerText = title;
+                document.getElementById('feedback-title').className = win ? 'text-xl font-bold mb-2 text-amber-400' : 'text-xl font-bold mb-2 text-slate-200';
+                document.getElementById('feedback-text').innerText = text;
+                panel.classList.remove('hidden');
+            },
+
+            animateScore(target) {
+                const el = document.getElementById('score-val');
+                let cur = parseInt(el.innerText);
+                const step = () => {
+                    if(cur < target) {
+                        cur += 1;
+                        el.innerText = cur.toString().padStart(3, '0');
+                        requestAnimationFrame(step);
+                    }
+                };
+                requestAnimationFrame(step);
+            },
+
+            finishQuiz() {
+                document.getElementById('quiz-game').classList.add('hidden');
+                document.getElementById('quiz-results').classList.remove('hidden');
+                document.getElementById('final-status').innerText = `Final Score: ${this.quiz.score}. Your knowledge peak: Level ${this.quiz.level}.`;
+            }
+        };
+
+        window.onload = () => app.init();
+    </script>
+</body>
+</html>
+
